@@ -84,21 +84,21 @@ async function init() {
   // 4. Clone Repository
   console.log(chalk.dim(`\nDownloading template from ${template.repo}#${template.branch}...`));
 
-  const emitter = degit(`${template.repo}#${template.branch}`, {
-    cache: false,
-    force: true,
-    mode: "git",
-  });
-
   try {
-    await emitter.clone(targetDir);
+    // Use git clone directly to avoid 'rm' issues on Windows and handle private repos better
+    const gitArgs = ["clone", "--depth", "1", "--branch", template.branch, template.repo, targetDir];
+    const { status } = spawnSync("git", gitArgs, { stdio: "inherit" });
+
+    if (status !== 0) {
+      throw new Error(`Git clone failed with status ${status}`);
+    }
   } catch (err) {
     console.error(chalk.red(`\n❌ Error cloning repository: ${err.message}`));
     if (err.message.includes("Host key verification failed")) {
       console.log(chalk.yellow("\n💡 Tip: Your SSH key is not authenticated with GitHub."));
       console.log(chalk.gray("   Run this command to fix it: ssh -T git@github.com"));
       console.log(chalk.gray("   Or update the template to use an HTTPS URL via 'npm run config'"));
-    } else if (err.message.includes("git")) {
+    } else {
       console.log(chalk.yellow("Tip: Ensure you have SSH access to the repository if it is private."));
     }
     process.exit(1);
