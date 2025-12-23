@@ -2,6 +2,7 @@
   "name": "create-ui-app",
   "version": "1.0.0",
   "description": "UI Scaffold CLI",
+  "type": "module",
   "main": "index.js",
   "bin": {
     "create-ui-app": "./index.js",

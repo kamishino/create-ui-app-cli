@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require("fs-extra");
-const path = require("path");
-const prompts = require("prompts");
-const degit = require("degit");
-const chalk = require("chalk");
-const { spawnSync } = require("child_process");
-const { config, getTemplates, hasTemplates } = require("./lib/config");
-const { configWizard, manageTemplates } = require("./lib/wizard");
+import fs from "fs-extra";
+import path from "path";
+import prompts from "prompts";
+import degit from "degit";
+import chalk from "chalk";
+import { spawnSync } from "child_process";
+import { config, getTemplates, hasTemplates } from "./lib/config.js";
+import { configWizard, manageTemplates } from "./lib/wizard.js";
 
 async function init() {
   // Check for --config flag
