@@ -3,7 +3,6 @@
 import fs from "fs-extra";
 import path from "path";
 import prompts from "prompts";
-import degit from "degit";
 import chalk from "chalk";
 import { spawnSync } from "child_process";
 import { config, getTemplates, hasTemplates } from "./lib/config.js";
