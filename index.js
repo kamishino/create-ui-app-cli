@@ -95,7 +95,11 @@ async function init() {
     await emitter.clone(targetDir);
   } catch (err) {
     console.error(chalk.red(`\n❌ Error cloning repository: ${err.message}`));
-    if (err.message.includes("git")) {
+    if (err.message.includes("Host key verification failed")) {
+      console.log(chalk.yellow("\n💡 Tip: Your SSH key is not authenticated with GitHub."));
+      console.log(chalk.gray("   Run this command to fix it: ssh -T git@github.com"));
+      console.log(chalk.gray("   Or update the template to use an HTTPS URL via 'npm run config'"));
+    } else if (err.message.includes("git")) {
       console.log(chalk.yellow("Tip: Ensure you have SSH access to the repository if it is private."));
     }
     process.exit(1);
