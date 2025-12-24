@@ -29,6 +29,15 @@ async function init() {
 
   console.log(chalk.bold.cyan("\n🚀 UI Scaffold CLI (create-ui-app)\n"));
 
+  // Check if running in interactive terminal
+  if (!process.stdin.isTTY) {
+    console.log(
+      chalk.yellow(
+        "⚠️  Warning: Non-interactive terminal detected. Using default values.\n"
+      )
+    );
+  }
+
   // 1. Check if templates exist
   if (!hasTemplates()) {
     const { runWizard } = await prompts({
@@ -57,23 +66,31 @@ async function init() {
   }
 
   // 3. Prompt User
-  const response = await prompts([
+  const response = await prompts(
+    [
+      {
+        type: "text",
+        name: "projectName",
+        message: "What is the project name?",
+        initial: "my-app",
+        validate: (value) =>
+          value.trim().length > 0 ? true : "Project name is required",
+      },
+      {
+        type: "select",
+        name: "template",
+        message: "Which template would you like to use?",
+        choices: templates,
+        initial: 0,
+      },
+    ],
     {
-      type: "text",
-      name: "projectName",
-      message: "What is the project name?",
-      initial: "my-app",
-      validate: (value) =>
-        value.trim().length > 0 ? true : "Project name is required",
-    },
-    {
-      type: "select",
-      name: "template",
-      message: "Which template would you like to use?",
-      choices: templates,
-      initial: 0,
-    },
-  ]);
+      onCancel: () => {
+        console.log(chalk.yellow("\n⚠️  Operation cancelled."));
+        process.exit(0);
+      },
+    }
+  );
 
   if (!response.projectName || !response.template) {
     console.log(chalk.yellow("\n⚠️  Operation cancelled."));
