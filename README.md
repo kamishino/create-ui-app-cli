@@ -10,6 +10,7 @@ A flexible, data-driven Node.js CLI tool used to bootstrap new frontend projects
 *   **Clean Slate**: Automatically removes git history from templates and initializes a fresh project.
 *   **Smart Package Manager Detection**: Automatically detects and uses your preferred package manager (pnpm, yarn, bun, or npm) with prompted dependency installation.
 *   **AI Release Integration**: Detects templates with AI-assisted release workflows and notifies users about required environment variables (e.g., `GEMINI_API_KEY`).
+*   **Smart Name Resolution**: Automatically resolves directory naming conflicts by appending incremental suffixes (e.g., `my-app` → `my-app-1`) without prompting.
 
 ## Installation
 
@@ -55,7 +56,7 @@ create-ui-app --config
 
 1.  **First Run**: The tool will detect that no configuration exists. It will create a `config.json` file on your system and print the path.
 2.  **Selection**: Choose a template from the list.
-3.  **Project Name**: Enter the name for your new project.
+3.  **Project Name**: Enter the name for your new project. If a directory with that name already exists, the CLI will automatically append a suffix (e.g., `-1`, `-2`) and notify you.
 4.  **Dependency Installation**: By default, dependencies are NOT installed automatically. Use `--install` flag to auto-install using your preferred package manager (pnpm, yarn, bun, or npm).
 5.  **AI Release Detection**: If your template includes AI-assisted release workflows (via `project:release` script), you'll receive a notification to configure your `GEMINI_API_KEY` in the `.env` file.
 

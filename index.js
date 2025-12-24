@@ -7,7 +7,11 @@ import chalk from "chalk";
 import { spawnSync } from "child_process";
 import { config, getTemplates, hasTemplates } from "./lib/config.js";
 import { configWizard, manageTemplates } from "./lib/wizard.js";
-import { detectPackageManager, checkAiReleaseSupport } from "./lib/utils.js";
+import {
+  detectPackageManager,
+  checkAiReleaseSupport,
+  getUniqueProjectName,
+} from "./lib/utils.js";
 
 async function init() {
   // Check for --config flag
@@ -76,23 +80,21 @@ async function init() {
     process.exit(0);
   }
 
-  const { projectName, template } = response;
-  const targetDir = path.join(process.cwd(), projectName);
+  let { projectName, template } = response;
 
-  if (fs.existsSync(targetDir)) {
-    const { overwrite } = await prompts({
-      type: "confirm",
-      name: "overwrite",
-      message: `Directory ${projectName} already exists. Overwrite?`,
-      initial: false,
-    });
+  // Resolve naming conflicts automatically
+  const uniqueName = getUniqueProjectName(projectName, process.cwd());
 
-    if (!overwrite) {
-      console.log(chalk.yellow("\n⚠️  Operation cancelled."));
-      process.exit(0);
-    }
-    await fs.remove(targetDir);
+  if (uniqueName !== projectName) {
+    console.log(
+      chalk.yellow(
+        `\n⚠️  Directory '${projectName}' already exists. Creating project in '${uniqueName}' instead.\n`
+      )
+    );
+    projectName = uniqueName;
   }
+
+  const targetDir = path.join(process.cwd(), projectName);
 
   // 4. Clone Repository
   console.log(
