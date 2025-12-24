@@ -7,7 +7,7 @@ import chalk from "chalk";
 import { spawnSync } from "child_process";
 import { config, getTemplates, hasTemplates } from "./lib/config.js";
 import { configWizard, manageTemplates } from "./lib/wizard.js";
-import { detectPackageManager } from "./lib/utils.js";
+import { detectPackageManager, checkAiReleaseSupport } from "./lib/utils.js";
 
 async function init() {
   // Check for --config flag
@@ -30,7 +30,11 @@ async function init() {
     if (runWizard) {
       await configWizard(config);
     } else {
-      console.log(chalk.yellow("\n⚠️  Operation cancelled. Run with --config to add templates later.\n"));
+      console.log(
+        chalk.yellow(
+          "\n⚠️  Operation cancelled. Run with --config to add templates later.\n"
+        )
+      );
       process.exit(0);
     }
   }
@@ -48,7 +52,8 @@ async function init() {
       name: "projectName",
       message: "What is the project name?",
       initial: "my-app",
-      validate: (value) => (value.trim().length > 0 ? true : "Project name is required"),
+      validate: (value) =>
+        value.trim().length > 0 ? true : "Project name is required",
     },
     {
       type: "select",
@@ -83,11 +88,23 @@ async function init() {
   }
 
   // 4. Clone Repository
-  console.log(chalk.dim(`\nDownloading template from ${template.repo}#${template.branch}...`));
+  console.log(
+    chalk.dim(
+      `\nDownloading template from ${template.repo}#${template.branch}...`
+    )
+  );
 
   try {
     // Use git clone directly to avoid 'rm' issues on Windows and handle private repos better
-    const gitArgs = ["clone", "--depth", "1", "--branch", template.branch, template.repo, targetDir];
+    const gitArgs = [
+      "clone",
+      "--depth",
+      "1",
+      "--branch",
+      template.branch,
+      template.repo,
+      targetDir,
+    ];
     const { status } = spawnSync("git", gitArgs, { stdio: "inherit" });
 
     if (status !== 0) {
@@ -96,11 +113,23 @@ async function init() {
   } catch (err) {
     console.error(chalk.red(`\n❌ Error cloning repository: ${err.message}`));
     if (err.message.includes("Host key verification failed")) {
-      console.log(chalk.yellow("\n💡 Tip: Your SSH key is not authenticated with GitHub."));
-      console.log(chalk.gray("   Run this command to fix it: ssh -T git@github.com"));
-      console.log(chalk.gray("   Or update the template to use an HTTPS URL via 'npm run config'"));
+      console.log(
+        chalk.yellow("\n💡 Tip: Your SSH key is not authenticated with GitHub.")
+      );
+      console.log(
+        chalk.gray("   Run this command to fix it: ssh -T git@github.com")
+      );
+      console.log(
+        chalk.gray(
+          "   Or update the template to use an HTTPS URL via 'npm run config'"
+        )
+      );
     } else {
-      console.log(chalk.yellow("Tip: Ensure you have SSH access to the repository if it is private."));
+      console.log(
+        chalk.yellow(
+          "Tip: Ensure you have SSH access to the repository if it is private."
+        )
+      );
     }
     process.exit(1);
   }
@@ -134,8 +163,10 @@ async function init() {
       });
 
       if (installDependencies) {
-        console.log(chalk.dim(`\nInstalling dependencies with ${packageManager}...\n`));
-        
+        console.log(
+          chalk.dim(`\nInstalling dependencies with ${packageManager}...\n`)
+        );
+
         const installResult = spawnSync(packageManager, ["install"], {
           stdio: "inherit",
           cwd: targetDir,
@@ -146,41 +177,68 @@ async function init() {
           didInstall = true;
           console.log(chalk.green("\n✔ Dependencies installed successfully"));
         } else {
-          console.log(chalk.yellow("\n⚠️  Installation failed. You may need to run the install command manually."));
+          console.log(
+            chalk.yellow(
+              "\n⚠️  Installation failed. You may need to run the install command manually."
+            )
+          );
         }
       }
     }
 
+    // Check for AI release support
+    const hasAiSupport = checkAiReleaseSupport(targetDir);
+
     // Read template info
     const templateInfoPath = path.join(targetDir, ".template-info.json");
     if (fs.existsSync(templateInfoPath)) {
-      const templateInfo = JSON.parse(fs.readFileSync(templateInfoPath, "utf-8"));
+      const templateInfo = JSON.parse(
+        fs.readFileSync(templateInfoPath, "utf-8")
+      );
 
-      console.log(chalk.bold.green(`\n✅ ${templateInfo.name} (${templateInfo.variant}) ready!`));
+      console.log(
+        chalk.bold.green(
+          `\n✅ ${templateInfo.name} (${templateInfo.variant}) ready!`
+        )
+      );
       console.log(chalk.gray(`   ${templateInfo.description}\n`));
 
       if (templateInfo.features && templateInfo.features.length > 0) {
         console.log(chalk.cyan("📦 Features:"));
-        templateInfo.features.forEach((f) => console.log(chalk.gray(`   • ${f}`)));
+        templateInfo.features.forEach((f) =>
+          console.log(chalk.gray(`   • ${f}`))
+        );
         console.log("");
       }
 
       if (templateInfo.postInstall && templateInfo.postInstall.steps) {
         console.log(chalk.cyan("📋 Next steps:"));
-        
+
         // Filter out install step if already installed
         const steps = didInstall
-          ? templateInfo.postInstall.steps.filter(step => 
-              !step.toLowerCase().includes("npm install") && 
-              !step.toLowerCase().includes("yarn install") &&
-              !step.toLowerCase().includes("pnpm install") &&
-              !step.toLowerCase().includes("bun install")
+          ? templateInfo.postInstall.steps.filter(
+              (step) =>
+                !step.toLowerCase().includes("npm install") &&
+                !step.toLowerCase().includes("yarn install") &&
+                !step.toLowerCase().includes("pnpm install") &&
+                !step.toLowerCase().includes("bun install")
             )
           : templateInfo.postInstall.steps;
-        
+
         steps.forEach((step, i) => {
           console.log(chalk.gray(`   ${i + 1}. ${step}`));
         });
+        console.log("");
+      }
+
+      // AI release support notification
+      if (hasAiSupport) {
+        console.log(chalk.cyan("🤖 AI Release Support Detected"));
+        console.log(
+          chalk.gray(
+            "   To use 'npm run project:release', please set your GEMINI_API_KEY in .env"
+          )
+        );
         console.log("");
       }
     } else {
@@ -192,9 +250,22 @@ async function init() {
         console.log(chalk.gray("  npm install"));
       }
       console.log(chalk.gray("  npm run dev\n"));
+
+      // AI release support notification
+      if (hasAiSupport) {
+        console.log(chalk.cyan("🤖 AI Release Support Detected"));
+        console.log(
+          chalk.gray(
+            "   To use 'npm run project:release', please set your GEMINI_API_KEY in .env"
+          )
+        );
+        console.log("");
+      }
     }
   } catch (err) {
-    console.error(chalk.red(`\n❌ Error during post-processing: ${err.message}`));
+    console.error(
+      chalk.red(`\n❌ Error during post-processing: ${err.message}`)
+    );
   }
 }
 
