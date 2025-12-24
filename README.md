@@ -8,6 +8,7 @@ A flexible, data-driven Node.js CLI tool used to bootstrap new frontend projects
 *   **Private Repo Support**: Seamlessly clone private repositories using your local SSH keys.
 *   **Zero-Config Start**: Auto-generates a default configuration file on the first run.
 *   **Clean Slate**: Automatically removes git history from templates and initializes a fresh project.
+*   **Smart Package Manager Detection**: Automatically detects and uses your preferred package manager (pnpm, yarn, bun, or npm) with prompted dependency installation.
 
 ## Installation
 
@@ -27,9 +28,12 @@ Run the command in your terminal:
 create-ui-app
 ```
 
+### Workflow
+
 1.  **First Run**: The tool will detect that no configuration exists. It will create a `config.json` file on your system and print the path.
 2.  **Selection**: Choose a template from the list.
 3.  **Project Name**: Enter the name for your new project.
+4.  **Dependency Installation** (New): The CLI will automatically detect your preferred package manager (pnpm, yarn, bun, or npm) and prompt you to install dependencies. Simply press Enter to accept (default is Yes), or select No to skip.
 
 ## Configuration
 

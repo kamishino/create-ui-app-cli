@@ -7,6 +7,7 @@ import chalk from "chalk";
 import { spawnSync } from "child_process";
 import { config, getTemplates, hasTemplates } from "./lib/config.js";
 import { configWizard, manageTemplates } from "./lib/wizard.js";
+import { detectPackageManager } from "./lib/utils.js";
 
 async function init() {
   // Check for --config flag
@@ -120,6 +121,36 @@ async function init() {
       console.log(chalk.green("✔ Created .env from .env.example"));
     }
 
+    // Package manager detection and installation prompt
+    const packageManager = detectPackageManager();
+    let didInstall = false;
+
+    if (packageManager) {
+      const { installDependencies } = await prompts({
+        type: "confirm",
+        name: "installDependencies",
+        message: `Would you like to install dependencies using ${packageManager}?`,
+        initial: true,
+      });
+
+      if (installDependencies) {
+        console.log(chalk.dim(`\nInstalling dependencies with ${packageManager}...\n`));
+        
+        const installResult = spawnSync(packageManager, ["install"], {
+          stdio: "inherit",
+          cwd: targetDir,
+          shell: true,
+        });
+
+        if (installResult.status === 0) {
+          didInstall = true;
+          console.log(chalk.green("\n✔ Dependencies installed successfully"));
+        } else {
+          console.log(chalk.yellow("\n⚠️  Installation failed. You may need to run the install command manually."));
+        }
+      }
+    }
+
     // Read template info
     const templateInfoPath = path.join(targetDir, ".template-info.json");
     if (fs.existsSync(templateInfoPath)) {
@@ -136,7 +167,18 @@ async function init() {
 
       if (templateInfo.postInstall && templateInfo.postInstall.steps) {
         console.log(chalk.cyan("📋 Next steps:"));
-        templateInfo.postInstall.steps.forEach((step, i) => {
+        
+        // Filter out install step if already installed
+        const steps = didInstall
+          ? templateInfo.postInstall.steps.filter(step => 
+              !step.toLowerCase().includes("npm install") && 
+              !step.toLowerCase().includes("yarn install") &&
+              !step.toLowerCase().includes("pnpm install") &&
+              !step.toLowerCase().includes("bun install")
+            )
+          : templateInfo.postInstall.steps;
+        
+        steps.forEach((step, i) => {
           console.log(chalk.gray(`   ${i + 1}. ${step}`));
         });
         console.log("");
@@ -146,7 +188,9 @@ async function init() {
       console.log(chalk.bold.green(`\n✅ Project ready in ./${projectName}\n`));
       console.log(chalk.cyan("Next steps:"));
       console.log(chalk.gray(`  cd ${projectName}`));
-      console.log(chalk.gray("  npm install"));
+      if (!didInstall) {
+        console.log(chalk.gray("  npm install"));
+      }
       console.log(chalk.gray("  npm run dev\n"));
     }
   } catch (err) {
