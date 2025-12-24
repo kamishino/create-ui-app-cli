@@ -16,6 +16,13 @@ async function init() {
     return;
   }
 
+  // Parse installation flags
+  const shouldInstall = process.argv.includes("--install");
+  const shouldSkipInstall = process.argv.includes("--no-install");
+
+  // Default behavior: skip installation if no flag is specified
+  const autoInstall = shouldInstall && !shouldSkipInstall;
+
   console.log(chalk.bold.cyan("\n🚀 UI Scaffold CLI (create-ui-app)\n"));
 
   // 1. Check if templates exist
@@ -150,39 +157,30 @@ async function init() {
       console.log(chalk.green("✔ Created .env from .env.example"));
     }
 
-    // Package manager detection and installation prompt
+    // Automatic dependency installation based on flags
     const packageManager = detectPackageManager();
     let didInstall = false;
 
-    if (packageManager) {
-      const { installDependencies } = await prompts({
-        type: "confirm",
-        name: "installDependencies",
-        message: `Would you like to install dependencies using ${packageManager}?`,
-        initial: true,
+    if (autoInstall && packageManager) {
+      console.log(
+        chalk.dim(`\nInstalling dependencies with ${packageManager}...\n`)
+      );
+
+      const installResult = spawnSync(packageManager, ["install"], {
+        stdio: "inherit",
+        cwd: targetDir,
+        shell: true,
       });
 
-      if (installDependencies) {
+      if (installResult.status === 0) {
+        didInstall = true;
+        console.log(chalk.green("\n✔ Dependencies installed successfully"));
+      } else {
         console.log(
-          chalk.dim(`\nInstalling dependencies with ${packageManager}...\n`)
+          chalk.yellow(
+            "\n⚠️  Installation failed. You may need to run the install command manually."
+          )
         );
-
-        const installResult = spawnSync(packageManager, ["install"], {
-          stdio: "inherit",
-          cwd: targetDir,
-          shell: true,
-        });
-
-        if (installResult.status === 0) {
-          didInstall = true;
-          console.log(chalk.green("\n✔ Dependencies installed successfully"));
-        } else {
-          console.log(
-            chalk.yellow(
-              "\n⚠️  Installation failed. You may need to run the install command manually."
-            )
-          );
-        }
       }
     }
 
@@ -213,6 +211,7 @@ async function init() {
 
       if (templateInfo.postInstall && templateInfo.postInstall.steps) {
         console.log(chalk.cyan("📋 Next steps:"));
+        console.log(chalk.gray(`   1. cd ${projectName}`));
 
         // Filter out install step if already installed
         const steps = didInstall
@@ -226,7 +225,7 @@ async function init() {
           : templateInfo.postInstall.steps;
 
         steps.forEach((step, i) => {
-          console.log(chalk.gray(`   ${i + 1}. ${step}`));
+          console.log(chalk.gray(`   ${i + 2}. ${step}`));
         });
         console.log("");
       }

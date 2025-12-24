@@ -29,12 +29,34 @@ Run the command in your terminal:
 create-ui-app
 ```
 
+### CLI Flags
+
+*   `--config` - Manage template configurations
+*   `--install` - Automatically install dependencies after cloning
+*   `--no-install` - Skip dependency installation (default behavior)
+
+**Examples:**
+
+```bash
+# Default: Skip installation
+create-ui-app
+
+# Auto-install dependencies
+create-ui-app --install
+
+# Explicitly skip installation
+create-ui-app --no-install
+
+# Manage templates
+create-ui-app --config
+```
+
 ### Workflow
 
 1.  **First Run**: The tool will detect that no configuration exists. It will create a `config.json` file on your system and print the path.
 2.  **Selection**: Choose a template from the list.
 3.  **Project Name**: Enter the name for your new project.
-4.  **Dependency Installation**: The CLI will automatically detect your preferred package manager (pnpm, yarn, bun, or npm) and prompt you to install dependencies. Simply press Enter to accept (default is Yes), or select No to skip.
+4.  **Dependency Installation**: By default, dependencies are NOT installed automatically. Use `--install` flag to auto-install using your preferred package manager (pnpm, yarn, bun, or npm).
 5.  **AI Release Detection**: If your template includes AI-assisted release workflows (via `project:release` script), you'll receive a notification to configure your `GEMINI_API_KEY` in the `.env` file.
 
 ## Configuration
